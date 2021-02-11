@@ -367,6 +367,11 @@ S_category_name(const int category)
 
 #endif /* ifdef USE_LOCALE */
 
+#define setlocale_failure_panic_c(                                          \
+                        cat, current, failed, caller_0_line, caller_1_line) \
+        setlocale_failure_panic_i(cat##_INDEX_, current, failed,            \
+                        caller_0_line, caller_1_line)
+
 /* porcelain_setlocale() presents a consistent POSIX-compliant interface to
  * setlocale().   Windows requres a customized base-level setlocale() */
 #ifdef WIN32
@@ -393,9 +398,15 @@ S_category_name(const int category)
 #  define per_thread_setlocale_r(cat, locale)                               \
                                        per_thread_setlocale_c(cat, locale)
 
-#  define void_setlocale_c(cat, locale)                                  \
-                                  ((void) porcelain_setlocale(cat, locale))
-#  define void_setlocale_i(i, locale)                                    \
+#  define void_setlocale_c(cat, locale)                                     \
+    STMT_START {                                                            \
+        if (! porcelain_setlocale(cat, locale)) {                           \
+            setlocale_failure_panic_i(get_category_index(cat, NULL),        \
+                                      NULL, locale, __LINE__, 0);           \
+            NOT_REACHED; /* NOTREACHED */                                   \
+        }                                                                   \
+    } STMT_END
+#  define void_setlocale_i(i, locale)                                       \
                                   void_setlocale_c(categories[i], locale)
 #  define void_setlocale_r(cat, locale)  void_setlocale_c(cat, locale)
 
@@ -1135,6 +1146,38 @@ S_emulate_setlocale_i(const unsigned int index, const char * locale)
             querylocale macros used in the remainder of this program */
 
 #ifdef USE_LOCALE
+
+STATIC void
+S_setlocale_failure_panic_i(const unsigned int cat_index,
+                            const char * current,
+                            const char * failed,
+                            const line_t caller_0_line,
+                            const line_t caller_1_line)
+{
+    const int cat = categories[cat_index];
+    const char * name = category_names[cat_index];
+    dTHX;
+    dSAVE_ERRNO;
+
+    PERL_ARGS_ASSERT_SETLOCALE_FAILURE_PANIC_I;
+
+#ifdef USE_C_BACKTRACE
+    dump_c_backtrace(Perl_debug_log, 20, 1);
+#endif
+
+    SETLOCALE_UNLOCK;
+
+    if (current == NULL) {
+        current = raw_querylocale_i(cat_index);
+    }
+
+    RESTORE_ERRNO;
+    Perl_croak(aTHX_ "panic: %s: %d:(%d): Can't change locale for %s(%d)"
+                     " from '%s' to '%s'; errno=%d\n",
+                     __FILE__, caller_0_line, caller_1_line, name, cat,
+                     current, failed, errno);
+    NOT_REACHED; /* NOTREACHED */
+}
 
 STATIC void
 S_set_numeric_radix(pTHX_ const bool use_locale)
