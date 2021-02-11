@@ -382,8 +382,9 @@ S_category_name(const int category)
  * setlocale.  For non-threaded perls, they just call the base-level functions.
  * "do_setlocale_c" is intended to be called when the category is a constant
  * known at compile time; "do_setlocale_r", not known until run time  */
-#  define do_setlocale_c(cat, locale) porcelain_setlocale(cat, locale)
-#  define do_setlocale_r(cat, locale) porcelain_setlocale(cat, locale)
+#  define do_setlocale_c(cat, locale)  porcelain_setlocale(cat, locale)
+#  define do_setlocale_i(i, locale)  do_setlocale_c(categories[i], locale)
+#  define do_setlocale_r(cat, locale)   do_setlocale_c(cat, locale)
 #  define FIX_GLIBC_LC_MESSAGES_BUG(i)
 
 #else   /* Below uses POSIX 2008 */
@@ -396,10 +397,11 @@ S_category_name(const int category)
  *
  * Systems without querylocale() require more work.
  */
-#    define do_setlocale_c(cat, locale)                                       \
-                                     emulate_setlocale_i(cat##_INDEX_, locale)
-#    define do_setlocale_r(cat, locale)                                       \
-                emulate_setlocale_i(get_category_index(cat, locale), locale)
+#    define do_setlocale_i(i, locale)  emulate_setlocale_i(i, locale)
+#    define do_setlocale_c(cat, locale)                                     \
+                                       do_setlocale_i(cat##_INDEX_, locale)
+#    define do_setlocale_r(cat, locale)                                     \
+                    do_setlocale_i(get_category_index(cat, locale), locale)
 
 #    if ! defined(__GLIBC__) || ! defined(USE_LOCALE_MESSAGES)
 
