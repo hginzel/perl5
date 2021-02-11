@@ -5194,6 +5194,8 @@ STATIC const char*	S_emulate_setlocale_i(const unsigned int index, const char* n
 #define PERL_ARGS_ASSERT_EMULATE_SETLOCALE_I
 STATIC const char*	S_my_querylocale_i(const unsigned int index);
 #define PERL_ARGS_ASSERT_MY_QUERYLOCALE_I
+STATIC locale_t	S_use_curlocale_scratch(void);
+#define PERL_ARGS_ASSERT_USE_CURLOCALE_SCRATCH
 #      if defined(USE_QUERYLOCALE)
 STATIC const char *	S_calculate_LC_ALL(pTHX_ const locale_t cur_obj);
 #define PERL_ARGS_ASSERT_CALCULATE_LC_ALL

@@ -1721,6 +1721,7 @@
 #      if defined(USE_POSIX_2008_LOCALE)
 #define emulate_setlocale_i	S_emulate_setlocale_i
 #define my_querylocale_i	S_my_querylocale_i
+#define use_curlocale_scratch	S_use_curlocale_scratch
 #        if defined(USE_QUERYLOCALE)
 #define calculate_LC_ALL(a)	S_calculate_LC_ALL(aTHX_ a)
 #        endif
