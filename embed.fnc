@@ -3248,6 +3248,8 @@ ST	|const char*|my_querylocale_i|const unsigned int index
 S	|const char *|calculate_LC_ALL|const locale_t cur_obj
 #      else
 S	|const char *|calculate_LC_ALL|NN const char ** individ_locales
+S	|const char *|setlocale_from_aggregate_LC_ALL			\
+				|NN const char * locale
 #      endif
 #    endif
 #    ifdef WIN32

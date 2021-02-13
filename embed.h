@@ -1513,6 +1513,7 @@
 #      if defined(USE_LOCALE)
 #        if defined(USE_POSIX_2008_LOCALE)
 #define calculate_LC_ALL(a)	S_calculate_LC_ALL(aTHX_ a)
+#define setlocale_from_aggregate_LC_ALL(a)	S_setlocale_from_aggregate_LC_ALL(aTHX_ a)
 #        endif
 #      endif
 #    endif
