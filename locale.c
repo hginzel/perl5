@@ -1134,7 +1134,8 @@ S_emulate_setlocale_i(const unsigned int index,
             }
         }
     }   /* End of this being setlocale(LC_foo, "") */
-    else if (strchr(new_locale, ';')) {
+
+    if (strchr(new_locale, ';')) {
         return setlocale_from_aggregate_LC_ALL(new_locale);
     }
 
