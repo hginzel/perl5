@@ -3242,7 +3242,7 @@ S	|void	|new_numeric	|NULLOK const char* newnum
 S	|void	|new_LC_ALL	|NULLOK const char* unused
 #    ifdef USE_POSIX_2008_LOCALE
 ST	|const char*|emulate_setlocale_i|const unsigned int index	\
-				    |NULLOK const char* locale
+				    |NULLOK const char* new_locale
 ST	|const char*|my_querylocale_i|const unsigned int index
 #      ifdef USE_QUERYLOCALE
 S	|const char *|calculate_LC_ALL|const locale_t cur_obj
