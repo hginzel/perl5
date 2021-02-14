@@ -3243,7 +3243,8 @@ S	|void	|new_LC_ALL	|NULLOK const char* unused
 #    ifdef USE_POSIX_2008_LOCALE
 ST	|const char*|emulate_setlocale_i|const unsigned int index	\
 				    |NULLOK const char* new_locale	\
-				    |const int recalc_LC_ALL
+				    |const int recalc_LC_ALL		\
+				    |const line_t line
 ST	|const char*|my_querylocale_i|const unsigned int index
 ST	|locale_t   |use_curlocale_scratch
 #      ifdef USE_QUERYLOCALE
@@ -3251,7 +3252,8 @@ S	|const char *|calculate_LC_ALL|const locale_t cur_obj
 #      else
 S	|const char *|calculate_LC_ALL|NN const char ** individ_locales
 S	|const char *|setlocale_from_aggregate_LC_ALL			\
-				|NN const char * locale
+				|NN const char * locale			\
+				|const line_t line
 S	|const char*|update_PL_curlocales_i|const unsigned int index	\
 				    |NN const char * new_locale		\
 				    |int recalc_LC_ALL
