@@ -3226,7 +3226,7 @@ ST	|const char*|my_langinfo|const int item|bool toggle
 #  endif
 iTR	|const char *|save_to_buffer|NULLOK const char * string	\
 				    |NULLOK char **buf		\
-				    |NN Size_t *buf_size	\
+				    |NULLOK Size_t *buf_size	\
 				    |const Size_t offset
 S	|char*	|stdize_locale	|NN char* locs
 S	|void	|new_collate	|NULLOK const char* newcoll

@@ -2461,7 +2461,10 @@ S_save_to_buffer(const char * string, char **buf, Size_t *buf_size,
 
     string_size = strlen(string) + offset + 1;
 
-    if (*buf_size == 0) {
+    if (buf_size == NULL) {
+        Newx(*buf, string_size, char);
+    }
+    else if (*buf_size == 0) {
         Newx(*buf, string_size, char);
         *buf_size = string_size;
     }
