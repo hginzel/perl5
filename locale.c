@@ -2482,7 +2482,7 @@ Perl_setlocale(const int category, const char * locale)
 #ifdef USE_LOCALE
 
 STATIC const char *
-S_save_to_buffer(const char * string, char **buf, Size_t *buf_size)
+S_save_to_buffer(const char * string, const char **buf, Size_t *buf_size)
 {
     /* Copy the NUL-terminated 'string' to a buffer whose address before this
      * call began at *buf, and whose available length before this call was
