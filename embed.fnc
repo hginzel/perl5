@@ -3220,13 +3220,15 @@ ST	|unsigned int|get_category_index|const int category|NULLOK const char * local
 S	|const char*|switch_category_locale_to_template|const int switch_category|const int template_category|NULLOK const char * template_locale
 S	|void	|restore_switched_locale|const int category|NULLOK const char * const original_locale
 #    if defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L)
-S	|const char*|my_langinfo|const nl_item item			\
-				|bool toggle				\
+S	|const char*|my_langinfo_i|const nl_item item			\
+				|const unsigned int cat_index		\
+				|NULLOK const char * locale		\
 				|NN const char ** retbufp		\
 				|NULLOK Size_t * retbuf_sizep
 #  else
-S	|const char*|my_langinfo|const int item				\
-				|bool toggle				\
+S	|const char*|my_langinfo_i|const int item			\
+				|const unsigned int cat_index		\
+				|NULLOK const char * locale		\
 				|NN const char ** retbufp		\
 				|NULLOK Size_t * retbuf_sizep
 #  endif
@@ -3244,6 +3246,10 @@ STr	|void	|setlocale_failure_panic_i|const unsigned int cat_index	\
 S	|void	|set_numeric_radix|const bool use_locale
 S	|void	|new_numeric	|NULLOK const char* newnum
 S	|void	|new_LC_ALL	|NULLOK const char* unused
+S	|const char *|toggle_locale_i|const unsigned switch_cat_index	\
+				|NN const char * new_locale
+S	|void	|restore_toggled_locale_i|const unsigned cat_index	\
+                                |NULLOK const char * original_locale
 ST	|bool	|is_codeset_name_UTF8|NN const char * name
 #    ifdef USE_POSIX_2008_LOCALE
 ST	|const char*|emulate_setlocale_i|const unsigned int index	\

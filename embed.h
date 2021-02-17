@@ -1501,7 +1501,7 @@
 #  if !(defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L))
 #    if defined(PERL_IN_LOCALE_C)
 #      if defined(USE_LOCALE)
-#define my_langinfo(a,b,c,d)	S_my_langinfo(aTHX_ a,b,c,d)
+#define my_langinfo_i(a,b,c,d,e)	S_my_langinfo_i(aTHX_ a,b,c,d,e)
 #      endif
 #    endif
 #  endif
@@ -1616,7 +1616,7 @@
 #  if defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L)
 #    if defined(PERL_IN_LOCALE_C)
 #      if defined(USE_LOCALE)
-#define my_langinfo(a,b,c,d)	S_my_langinfo(aTHX_ a,b,c,d)
+#define my_langinfo_i(a,b,c,d,e)	S_my_langinfo_i(aTHX_ a,b,c,d,e)
 #      endif
 #    endif
 #  endif
@@ -1719,11 +1719,13 @@
 #define new_ctype(a)		S_new_ctype(aTHX_ a)
 #define new_numeric(a)		S_new_numeric(aTHX_ a)
 #define restore_switched_locale(a,b)	S_restore_switched_locale(aTHX_ a,b)
+#define restore_toggled_locale_i(a,b)	S_restore_toggled_locale_i(aTHX_ a,b)
 #define save_to_buffer		S_save_to_buffer
 #define set_numeric_radix(a)	S_set_numeric_radix(aTHX_ a)
 #define setlocale_failure_panic_i	S_setlocale_failure_panic_i
 #define stdize_locale(a)	S_stdize_locale(aTHX_ a)
 #define switch_category_locale_to_template(a,b,c)	S_switch_category_locale_to_template(aTHX_ a,b,c)
+#define toggle_locale_i(a,b)	S_toggle_locale_i(aTHX_ a,b)
 #      if defined(USE_POSIX_2008_LOCALE)
 #define emulate_setlocale_i	S_emulate_setlocale_i
 #define my_querylocale_i	S_my_querylocale_i
