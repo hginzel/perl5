@@ -6118,26 +6118,44 @@ Perl_thread_locale_init()
 {
     /* Called from a thread on startup*/
 
-#ifdef USE_THREAD_SAFE_LOCALE
+#if defined(USE_LOCALE_THREADS) && defined(USE_LOCALE)                  \
+                                                                        \
+    /* It can cause races and totally wrong results to use threads and  \
+     * locales unless there is locale thread safety.  So avoid          \
+     * exacerbating that */                                             \
+ && defined(USE_THREAD_SAFE_LOCALE)
 
-    dTHX_DEBUGGING;
+    dTHX;
 
+    DEBUG_L(PerlIO_printf(Perl_debug_log,
+            "%s:%d: new thread, initial locale is %s\n",
+            __FILE__, __LINE__, porcelain_setlocale(LC_ALL, NULL)));
 
-     DEBUG_L(PerlIO_printf(Perl_debug_log,
-            "%s:%d: new thread, initial locale is %s; calling setlocale\n",
-            __FILE__, __LINE__, setlocale(LC_ALL, NULL)));
+    if (! sync_locale()) {  /* Side effect of going to per-thread if avail */
+        locale_panic_("Thread unexpectedly started not in global locale");
+    }
 
-#  ifdef WIN32
+#  ifdef LC_ALL
 
-    /* On Windows, make sure new thread has per-thread locales enabled */
-    _configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
+    SETLOCALE_LOCK;
+    void_setlocale_c(LC_ALL, "C");
+    SETLOCALE_UNLOCK;
 
 #  else
 
-    /* This thread starts off in the C locale */
-    Perl_setlocale(LC_ALL, "C");
+    {
+        unsigned int i;
+        for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+            SETLOCALE_LOCK;
+            void_setlocale_i(i, "C");
+            SETLOCALE_UNLOCK;
+        }
+    }
 
 #  endif
+
+    new_LC_ALL(NULL);
+
 #endif
 
 }
