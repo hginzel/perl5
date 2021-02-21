@@ -5952,10 +5952,9 @@ L<C<Perl_setlocale>|perlapi/Perl_setlocale>, Perl needs to be told that the
 locale has changed.  Use this function to do so, before returning to Perl.
 
 The return value is a boolean: TRUE if the global locale at the time of call
-was in effect; and FALSE if a per-thread locale was in effect.  This can be
-used by the caller that needs to restore things as-they-were to decide whether
-or not to call
-L<C<Perl_switch_to_global_locale>|perlapi/switch_to_global_locale>.
+was in effect; and FALSE if a per-thread locale was in effect.  On Perls with
+thread-safe locales, the calling thread will be converted to be thread-safe if
+it wasn't already.  A return of FALSE probably is an error indication.
 
 =cut
 */
@@ -5963,84 +5962,103 @@ L<C<Perl_switch_to_global_locale>|perlapi/switch_to_global_locale>.
 bool
 Perl_sync_locale()
 {
+    dTHX;
 
-#ifndef USE_LOCALE
+#if ! defined(USE_LOCALE)
 
+    return TRUE;
+
+#elif ! defined(USE_LOCALE_THREADS)
+
+    new_LC_ALL(NULL);
+    return TRUE;
+
+#elif defined(WIN32)
+
+    /* For Windows, all the categories are properly set (because everything
+     * uses setlocale(); just update our records */
+    new_LC_ALL(NULL);
+
+#  ifndef USE_THREAD_SAFE_LOCALE
+
+    return TRUE;
+
+#  else
+
+    /* And for platforms with thread-safe locales, return the correct state */
+    if (_ENABLE_PER_THREAD_LOCALE
+                            == _configthreadlocale(_ENABLE_PER_THREAD_LOCALE))
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+
+#  endif
+#elif ! defined(USE_POSIX_2008_LOCALE)
+
+    new_LC_ALL(NULL);
     return TRUE;
 
 #else
 
-    const char * newlocale;
-    dTHX;
-
-#  ifdef USE_POSIX_2008_LOCALE
-
-    bool was_in_global_locale = FALSE;
+    unsigned int i;
     locale_t cur_obj = uselocale((locale_t) 0);
+    const bool retval = (cur_obj == LC_GLOBAL_LOCALE);
 
-    /* On Windows, unless the foreign code has turned off the thread-safe
-     * locale setting, any plain setlocale() will have affected what we see, so
-     * no need to worry.  Otherwise, If the foreign code has done a plain
-     * setlocale(), it will only affect the global locale on POSIX systems, but
-     * will affect the */
-    if (cur_obj == LC_GLOBAL_LOCALE) {
+    /* If we were already in a per-thread locale, we just need to update our
+     * records.  That is trivial with querylocale_l(), as shown below.  But
+     * otherwise, convert to the global locale, introducing the possibility of
+     * an unnecessary race, which is why querylocale_l is preferred if
+     * available. */
+    if (! retval) {
 
-#    ifdef HAS_QUERY_LOCALE
+#  ifndef querylocale_l
 
-        void_setlocale_c(LC_ALL, raw_querylocale_c(LC_ALL));
+        uselocale(LC_GLOBAL_LOCALE);
 
-#    else
+#  else
 
-        unsigned int i;
+     /* Here, we have query_locale_l().  If no records to update, just need to
+      * make sure LC_ALL is known. */
+#    ifndef USE_PL_CURLOCALES
 
-        /* We can't trust that we can read the LC_ALL format on the
-         * platform, so do them individually */
-        for (i = 0; i < LC_ALL_INDEX_; i++) {
-            void_setlocale_i(i, raw_querylocale_i(i));
+        /* No cache to update; but need LC_ALL updated */
+        calculate_LC_ALL(cur_obj);
+
+#    else     /* Otherwise have to update our records, category by category */
+
+        for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+            emulate_setlocale_i(i,
+                                querylocale_l(i, cur_obj),
+                                LOOPING,
+                                __LINE__);
         }
 
 #    endif
 
-        was_in_global_locale = TRUE;
+        new_LC_ALL(NULL);
+        return FALSE;
+
+#  endif
+
     }
 
-#  else
+    /* Here, we are in the global locale.
+     *
+     * The porcelain setlocale() contains the updated information; just create
+     * a P2008 object with that; using a loop to incrementally add each
+     * category, as we don't necessarily know what the LC_ALL syntax is on this
+     * platform */
+    for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+        emulate_setlocale_i(i,
+                            porcelain_setlocale(categories[i], NULL),
+                            LOOPING,
+                            __LINE__);
+    }
 
-    bool was_in_global_locale = TRUE;
-
-#  endif
-#  ifdef USE_LOCALE_CTYPE
-
-    newlocale = savepv(raw_querylocale_c(LC_CTYPE));
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
-        "%s:%d: %s\n", __FILE__, __LINE__,
-        setlocale_debug_string_c(LC_CTYPE, NULL, newlocale)));
-    new_ctype(newlocale);
-    Safefree(newlocale);
-
-#  endif /* USE_LOCALE_CTYPE */
-#  ifdef USE_LOCALE_COLLATE
-
-    newlocale = savepv(raw_querylocale_c(LC_COLLATE));
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
-        "%s:%d: %s\n", __FILE__, __LINE__,
-        setlocale_debug_string_c(LC_COLLATE, NULL, newlocale)));
-    new_collate(newlocale);
-    Safefree(newlocale);
-
-#  endif
-#  ifdef USE_LOCALE_NUMERIC
-
-    newlocale = savepv(raw_querylocale_c(LC_NUMERIC));
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
-        "%s:%d: %s\n", __FILE__, __LINE__,
-        setlocale_debug_string_c(LC_NUMERIC, NULL, newlocale)));
-    new_numeric(newlocale);
-    Safefree(newlocale);
-
-#  endif /* USE_LOCALE_NUMERIC */
-
-    return was_in_global_locale;
+    new_LC_ALL(NULL);
+    return retval;
 
 #endif
 
