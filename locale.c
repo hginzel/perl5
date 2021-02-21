@@ -5858,13 +5858,13 @@ Perl_my_strerror(pTHX_ const int errnum, int * utf8ness)
 
 =for apidoc switch_to_global_locale
 
-On systems without locale support, or on typical single-threaded builds, or on
-platforms that do not support per-thread locale operations, this function does
-nothing.  On such systems that do have locale support, only a locale global to
-the whole program is available.
+On systems without locale support, or on typical single-threaded builds, this
+function does nothing.  On such systems that do have locale support, only a
+locale global to the whole program is available.
 
 On multi-threaded builds on systems that do have per-thread locale operations,
-this function converts the thread it is running in to use the global locale.
+this function converts the thread it is running in to use the global locale,
+setting that locale to be the same as the thread's at the time of switching.
 This is for code that has not yet or cannot be updated to handle multi-threaded
 locale operation.  As long as only a single thread is so-converted, everything
 works fine, as all the other threads continue to ignore the global one, so only
@@ -5915,22 +5915,45 @@ void
 Perl_switch_to_global_locale()
 {
 
-#ifdef USE_THREAD_SAFE_LOCALE
-#  ifdef WIN32
+#ifdef WIN32
+#  if defined(USE_THREAD_SAFE_LOCALE)
 
-    _configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
+    {   /* Under the hood, everything uses setlocale(), so can use LC_ALL
+           without worrying about syntax when have disparate locales */
+
+        dTHX;
+        const char * save_thread  = per_thread_querylocale_c(LC_ALL);
+
+        _configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
+
+        porcelain_setlocale(LC_ALL, save_thread);
+    }
+
+#  endif
+#else
+#  ifndef USE_POSIX_2008_LOCALE
+
+    /* A no-op */
 
 #  else
 
-    {
+    {   /* We save the current value for each category; switch to the global
+           locale; then set that */
+        const char * curlocales[NOMINAL_LC_ALL_INDEX];
         unsigned int i;
 
-        for (i = 0; i < LC_ALL_INDEX_; i++) {
-            setlocale(categories[i], raw_querylocale_i(i));
+        for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+            PERL_UNUSED_RESULT(save_to_buffer(raw_querylocale_i(i),
+                                              &curlocales[i], NULL));
+        }
+
+        uselocale(LC_GLOBAL_LOCALE);
+
+        for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+            porcelain_setlocale(categories[i], curlocales[i]);
+            Safefree(curlocales[i]);
         }
     }
-
-    uselocale(LC_GLOBAL_LOCALE);
 
 #  endif
 #endif
