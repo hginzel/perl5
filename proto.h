@@ -1863,6 +1863,11 @@ PERL_CALLCONV HV*	Perl_load_charnames(pTHX_ SV * char_name, const char * context
 PERL_CALLCONV void	Perl_load_module(pTHX_ U32 flags, SV* name, SV* ver, ...);
 #define PERL_ARGS_ASSERT_LOAD_MODULE	\
 	assert(name)
+PERL_CALLCONV_NO_RET void	Perl_locale_panic(const char * msg, const char * file_name, const line_t line)
+			__attribute__noreturn__;
+#define PERL_ARGS_ASSERT_LOCALE_PANIC	\
+	assert(msg); assert(file_name)
+
 PERL_CALLCONV OP*	Perl_localize(pTHX_ OP *o, I32 lex);
 #define PERL_ARGS_ASSERT_LOCALIZE	\
 	assert(o)
