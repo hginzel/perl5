@@ -15661,6 +15661,7 @@ perl_clone_using(PerlInterpreter *proto_perl, UV flags,
 
 #ifdef USE_LOCALE_NUMERIC
     PL_numeric_name	= SAVEPV(proto_perl->Inumeric_name);
+    PL_ctype_name	= SAVEPV(proto_perl->Ictype_name);
     PL_numeric_radix_sv	= sv_dup_inc(proto_perl->Inumeric_radix_sv, param);
 
 #  if defined(USE_POSIX_2008_LOCALE)

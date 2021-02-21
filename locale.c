@@ -1577,6 +1577,8 @@ S_new_ctype(pTHX_ const char *newctype)
 
 #else
 
+    const char *save_newctype;
+
     /* Called after each libc setlocale() call affecting LC_CTYPE, to tell
      * core Perl this and that 'newctype' is the name of the new locale.
      *
@@ -1603,7 +1605,19 @@ S_new_ctype(pTHX_ const char *newctype)
         PL_warn_locale = NULL;
     }
 
-    PL_in_utf8_CTYPE_locale = is_locale_utf8(newctype);
+    save_newctype = stdize_locale(savepv(newctype));
+
+    PL_in_utf8_CTYPE_locale = is_locale_utf8(save_newctype);
+    PL_in_utf8_turkic_locale = FALSE;
+
+    /* Save the new name if it isn't the same as the previous one */
+    if (PL_ctype_name && strEQ(PL_ctype_name, save_newctype)) {
+        Safefree(save_newctype);
+    }
+    else {
+        Safefree(PL_ctype_name);
+        PL_ctype_name = save_newctype;
+    }
 
     /* A UTF-8 locale gets standard rules.  But note that code still has to
      * handle this specially because of the three problematic code points */
@@ -5566,11 +5580,18 @@ S_is_locale_utf8(pTHX_ const char * locale)
 #  else
 
     const char * scratch_buffer = NULL;
-    const char * codeset = my_langinfo_c(CODESET, LC_CTYPE, locale,
-                                       &scratch_buffer, NULL, NULL);
-    bool retval = is_codeset_name_UTF8(codeset);
+    const char * codeset;
+    bool retval;
 
     PERL_ARGS_ASSERT_IS_LOCALE_UTF8;
+
+    if (PL_ctype_name && strEQ(locale, PL_ctype_name)) {
+        return PL_in_utf8_CTYPE_locale;
+    }
+
+    codeset = my_langinfo_c(CODESET, LC_CTYPE, locale,
+                            &scratch_buffer, NULL, NULL);
+    retval = is_codeset_name_UTF8(codeset);
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log,
              "%s: %d: found codeset=%s, is_utf8=%d\n",
