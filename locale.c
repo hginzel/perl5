@@ -1390,6 +1390,7 @@ S_set_numeric_radix(pTHX_ const bool use_locale)
 STATIC void
 S_new_numeric(pTHX_ const char *newnum)
 {
+    const char *save_newnum;
 
 #ifndef USE_LOCALE_NUMERIC
 
@@ -1429,10 +1430,6 @@ S_new_numeric(pTHX_ const char *newnum)
      *                  used to avoid having to recalculate.
      */
 
-    char *save_newnum;
-    const char * scratch_buffer = NULL;
-    Size_t buf_size = 0;
-
     if (! newnum) {
         Safefree(PL_numeric_name);
         PL_numeric_name = NULL;
@@ -1444,29 +1441,6 @@ S_new_numeric(pTHX_ const char *newnum)
 
     save_newnum = stdize_locale(savepv(newnum));
     PL_numeric_underlying = TRUE;
-    PL_numeric_standard = isNAME_C_OR_POSIX(save_newnum);
-
-#ifndef TS_W32_BROKEN_LOCALECONV
-
-    /* If its name isn't C nor POSIX, it could still be indistinguishable from
-     * them.  But on broken Windows systems calling my_langinfo() for
-     * THOUSEP can currently (but rarely) cause a race, so avoid doing that,
-     * and just always change the locale if not C nor POSIX on those systems */
-    if (! PL_numeric_standard) {
-        PL_numeric_standard =    strEQ(C_decimal_point,
-                                       my_langinfo_c(RADIXCHAR, LC_NUMERIC,
-                                                     USE_UNDERLYING_LOCALE,
-                                                     &scratch_buffer,
-                                                     &buf_size, NULL))
-                               && strEQ(C_thousands_sep,
-                                       my_langinfo_c(THOUSEP, LC_NUMERIC,
-                                                     USE_UNDERLYING_LOCALE,
-                                                     &scratch_buffer,
-                                                     &buf_size, NULL));
-        Safefree(scratch_buffer);
-    }
-
-#endif
 
     /* Save the new name if it isn't the same as the previous one, if any */
     if (PL_numeric_name && strEQ(PL_numeric_name, save_newnum)) {
@@ -1477,8 +1451,6 @@ S_new_numeric(pTHX_ const char *newnum)
         PL_numeric_name = save_newnum;
     }
 
-    PL_numeric_underlying_is_standard = PL_numeric_standard;
-
 #  ifdef USE_POSIX_2008_LOCALE
 
     PL_underlying_numeric_obj = newlocale(LC_NUMERIC_MASK,
@@ -1486,6 +1458,46 @@ S_new_numeric(pTHX_ const char *newnum)
                                           PL_underlying_numeric_obj);
 
 #endif
+
+    if (isNAME_C_OR_POSIX(PL_numeric_name)) {
+        PL_numeric_standard = TRUE;
+    }
+    else { /* If its name isn't C nor POSIX, it could still be
+              indistinguishable from them. */
+        const char * scratch_buffer = NULL;
+
+        PL_numeric_standard = strEQ(C_decimal_point,
+                                  my_langinfo_c(RADIXCHAR, LC_NUMERIC,
+                                                USE_UNDERLYING_NUMERIC,
+                                                &scratch_buffer, NULL,
+                                                NULL));
+        Safefree(scratch_buffer);
+
+#  ifndef TS_W32_BROKEN_LOCALECONV
+
+        scratch_buffer = NULL;
+
+        /* Getting the radix character above doesn't likely involve using
+         * localeconv(), but getting the thousands separator currently does
+         * (patches welcome).   khw doesn't think it's worth even the small
+         * risk of a race to get this value, which in almost all locales is
+         * empty, and doesn't appear to be used in any of the Micrsoft library
+         * routines anyway. */
+
+        if (PL_numeric_standard) {
+            PL_numeric_standard = strEQ(C_thousands_sep,
+                                        my_langinfo_c(THOUSEP, LC_NUMERIC,
+                                                      USE_UNDERLYING_NUMERIC,
+                                                      &scratch_buffer, NULL,
+                                                      NULL));
+        }
+        Safefree(scratch_buffer);
+
+#  endif
+
+    }
+
+    PL_numeric_underlying_is_standard = PL_numeric_standard;
 
     DEBUG_L( PerlIO_printf(Perl_debug_log,
                             "Called new_numeric with %s, PL_numeric_name=%s\n",
