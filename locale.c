@@ -3386,7 +3386,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     {
         bool done = FALSE;
         if (lang) {
-            sl_result[LC_ALL_INDEX_] = raw_setlocale_c(LC_ALL, setlocale_init);
+            sl_result[LC_ALL_INDEX_] = porcelain_setlocale(LC_ALL, setlocale_init);
             DEBUG_LOCALE_INIT(LC_ALL_INDEX_, setlocale_init,
                                              sl_result[LC_ALL_INDEX_]);
             if (sl_result[LC_ALL_INDEX_])
@@ -3401,7 +3401,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
                                 && (lang || PerlEnv_getenv(category_names[i])))
                             ? setlocale_init
                             : NULL;
-                sl_result[i] = raw_setlocale_i(i, locale_param);
+                sl_result[i] = porcelain_setlocale(categories[i], locale_param);
                 if (! sl_result[i]) {
                     setlocale_failure = TRUE;
                 }
@@ -3440,7 +3440,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
                 /* Note that this may change the locale, but we are going to do
                  * that anyway just below */
-                system_default_locale = raw_setlocale_c(LC_ALL, "");
+                system_default_locale = porcelain_setlocale(LC_ALL, "");
                 DEBUG_LOCALE_INIT(LC_ALL_INDEX_, "", system_default_locale);
 
                 /* Skip if invalid or if it's already on the list of locales to
@@ -3465,7 +3465,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
 #  ifdef LC_ALL
 
-        sl_result[LC_ALL_INDEX_] = raw_setlocale_c(LC_ALL, trial_locale);
+        sl_result[LC_ALL_INDEX_] = porcelain_setlocale(LC_ALL, trial_locale);
         DEBUG_LOCALE_INIT(LC_ALL_INDEX_, trial_locale, sl_result[LC_ALL_INDEX_]);
         if (! sl_result[LC_ALL_INDEX_]) {
             setlocale_failure = TRUE;
@@ -3486,7 +3486,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
         if (! setlocale_failure) {
             unsigned int j;
             for (j = 0; j < NOMINAL_LC_ALL_INDEX; j++) {
-                curlocales[j] = raw_setlocale_i(j, trial_locale);
+                curlocales[j] = porcelain_setlocale(categories[j], trial_locale);
                 if (! curlocales[j]) {
                     setlocale_failure = TRUE;
                 }
@@ -3673,7 +3673,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
             for (j = 0; j < NOMINAL_LC_ALL_INDEX; j++) {
                 Safefree(curlocales[j]);
-                curlocales[j] = savepv(raw_querylocale_i(j));
+                curlocales[j] = savepv(porcelain_setlocale(categories[j], NULL));
                 DEBUG_LOCALE_INIT(j, NULL, curlocales[j]);
             }
         }
@@ -3711,6 +3711,16 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
             }
         }
     } /* End of tried to fallback */
+
+#  ifdef USE_POSIX_2008_LOCALE
+
+    /* The porcelain setlocales haven't affected the P2008 locales.  Initialize
+     * them now */
+    for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+        void_setlocale_i(i, curlocales[i]);
+    }
+
+#  endif
 
     /* Done with finding the locales; update our records */
     new_LC_ALL(NULL);
