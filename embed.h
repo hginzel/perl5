@@ -1514,6 +1514,7 @@
 #        if defined(USE_POSIX_2008_LOCALE)
 #define calculate_LC_ALL(a)	S_calculate_LC_ALL(aTHX_ a)
 #define setlocale_from_aggregate_LC_ALL(a)	S_setlocale_from_aggregate_LC_ALL(aTHX_ a)
+#define update_PL_curlocales_i(a,b,c)	S_update_PL_curlocales_i(aTHX_ a,b,c)
 #        endif
 #      endif
 #    endif

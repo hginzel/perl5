@@ -3242,7 +3242,8 @@ S	|void	|new_numeric	|NULLOK const char* newnum
 S	|void	|new_LC_ALL	|NULLOK const char* unused
 #    ifdef USE_POSIX_2008_LOCALE
 ST	|const char*|emulate_setlocale_i|const unsigned int index	\
-				    |NULLOK const char* new_locale
+				    |NULLOK const char* new_locale	\
+				    |const int recalc_LC_ALL
 ST	|const char*|my_querylocale_i|const unsigned int index
 #      ifdef USE_QUERYLOCALE
 S	|const char *|calculate_LC_ALL|const locale_t cur_obj
@@ -3250,6 +3251,9 @@ S	|const char *|calculate_LC_ALL|const locale_t cur_obj
 S	|const char *|calculate_LC_ALL|NN const char ** individ_locales
 S	|const char *|setlocale_from_aggregate_LC_ALL			\
 				|NN const char * locale
+S	|const char*|update_PL_curlocales_i|const unsigned int index	\
+				    |NN const char * new_locale		\
+				    |int recalc_LC_ALL
 #      endif
 #    endif
 #    ifdef WIN32
