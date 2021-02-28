@@ -523,18 +523,24 @@ S_category_name(const int category)
 #  define per_thread_querylocale_r(cat)                                     \
                      per_thread_querylocale_i(get_category_index(cat, NULL))
 
-#    ifndef HAS_QUERYLOCALE
+#    ifndef USE_QUERYLOCALE
 #      define USE_PL_CURLOCALES
-#    else               /* Has a libc querylocale() */
+#    else
 #      define isSINGLE_BIT_SET(mask) isPOWER_OF_2(mask)
 
        /* This code used to think querylocale() was valid on LC_ALL.  Make sure
         * all instances of that have been removed */
 #      define QUERYLOCALE_ASSERT(index)                                     \
                         __ASSERT_(isSINGLE_BIT_SET(category_masks[index]))
+#      if ! defined(HAS_QUERYLOCALE) && defined(_NL_LOCALE_NAME)
+#        define querylocale_l(index, locale_obj)                            \
+            (QUERYLOCALE_ASSERT(index)                                      \
+             nl_langinfo_l(_NL_LOCALE_NAME(categories[index]), locale_obj))
+#      else
 #        define querylocale_l(index, locale_obj)                            \
                            (QUERYLOCALE_ASSERT(index)                       \
                             querylocale(category_masks[index], locale_obj))
+#      endif
 #    endif
 #    if ! defined(__GLIBC__) || ! defined(USE_LOCALE_MESSAGES)
 
@@ -767,7 +773,7 @@ S_my_querylocale_i(const unsigned int index)
     }
     else {
 
-#  ifdef HAS_QUERYLOCALE
+#  ifdef USE_QUERYLOCALE
 
         /* We don't currently keep records when there is querylocale(), so have
          * to get it anew each time */
@@ -834,7 +840,7 @@ S_emulate_setlocale_i(const unsigned int index, const char * locale)
         return my_querylocale_i(index);
     }
 
-#  ifndef HAS_QUERYLOCALE
+#  ifndef USE_QUERYLOCALE
 
     if (strEQ(locale, "")) {
 
@@ -1165,10 +1171,10 @@ S_emulate_setlocale_i(const unsigned int index, const char * locale)
      * locale that got switched to is, as it came from the environment.  So
      * have to find it */
 
-#  ifdef HAS_QUERYLOCALE
+#  ifdef USE_QUERYLOCALE
 
     if (strEQ(locale, "")) {
-        locale = querylocale(mask, new_obj);
+        locale = querylocale_l(index, new_obj);
     }
 
 #    else
