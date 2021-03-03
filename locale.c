@@ -2465,8 +2465,8 @@ Perl_setlocale(const int category, const char * locale)
     }
 
     /* Here, an actual change is being requested.  Do it */
-    retval = save_to_buffer(raw_setlocale_i(cat_index, locale),
-                                &PL_setlocale_buf, &PL_setlocale_bufsize);
+    retval = raw_setlocale_i(cat_index, locale);
+
     if (! retval) {
 
         DEBUG_L(PerlIO_printf(Perl_debug_log,
