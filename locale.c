@@ -5232,7 +5232,17 @@ Perl__mem_collxfrm(pTHX_ const char *input_string,
      * give up */
     for (;;) {
 
+        errno = 0;
         *xlen = strxfrm(xbuf + COLLXFRM_HDR_LEN, s, xAlloc - COLLXFRM_HDR_LEN);
+
+        if (errno != 0) {
+            DEBUG_L(PerlIO_printf(Perl_debug_log,
+                    "strxfrm failed for LC_COLLATE=%s, bytes=%s; errno=%d",
+                    PL_collation_name,
+                    _byte_dump_string((U8 *) s, len, 1),
+                    errno));
+            goto bad;
+        }
 
         /* If the transformed string occupies less space than we told strxfrm()
          * was available, it means it successfully transformed the whole
