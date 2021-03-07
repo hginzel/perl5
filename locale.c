@@ -5699,7 +5699,7 @@ Perl__is_in_locale_category(pTHX_ const bool compiling, const int category)
  *
  * There are two sets of implementations.  The first below is if we have
  * strerror_l().  This is the simpler.  We just use the already-built C locale
- * object if not in locale scope, or build up a custome one otherwise.
+ * object if not in locale scope, or build up a custom one otherwise.
  *
  * When strerror_l() is not available, we may have to swap locales temporarily
  * to bring the two categories into sync with each other, and possibly to the C
